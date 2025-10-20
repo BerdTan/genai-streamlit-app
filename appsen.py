@@ -13,8 +13,19 @@ import streamlit as st
 #load environment variables from .env file
 load_dotenv()
 
-# Google Gemini implementation
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# Google Gemini implementation - Use Streamlit secrets for deployment
+try:
+    # Try Streamlit secrets first (for deployment)
+    api_key = st.secrets["GEMINI_API_KEY"]
+except (KeyError, FileNotFoundError):
+    # Fall back to environment variable (for local development)
+    api_key = os.getenv("GEMINI_API_KEY")
+
+if not api_key:
+    st.error("⚠️ **GEMINI_API_KEY not found!** Please configure it in Streamlit secrets or .env file.")
+    st.stop()
+
+genai.configure(api_key=api_key)
 model = genai.GenerativeModel('gemini-2.0-flash-exp')
 
 # Helper function to get dataset path with multiple fallback options
@@ -320,3 +331,4 @@ if "df" in st.session_state:
         
         # Show the summary table
         st.write(summary_table)
+
