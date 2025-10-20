@@ -5,8 +5,7 @@ import re
 import plotly.express as px
 import time
 from dotenv import load_dotenv
-from google import genai
-from google.genai import types # Import the types module
+import google.generativeai as genai
 import streamlit as st
 
 # import openai
@@ -15,7 +14,8 @@ import streamlit as st
 load_dotenv()
 
 # Google Gemini implementation
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+model = genai.GenerativeModel('gemini-2.0-flash-exp')
 
 # Helper function to get dataset path with multiple fallback options
 def get_dataset_path():
@@ -76,15 +76,14 @@ def get_sentiment(text):
     if not cleaned or cleaned.isspace():
         return "Neutral"  # Neutral sentiment for empty or whitespace-only reviews
     try:
-        prompt = f"Please provide a sentiment score between -1 (very negative) to 1 (very positive) for the following review summary: '{cleaned}'. Only return the numeric score."
-        response = client.models.generate_content(
-                model="gemini-2.0-flash-exp",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction="You are a sentiment analysis assistant. Provide only the numeric sentiment score.",
-                    temperature=0.0,
-                    max_output_tokens=10
-                )
+        prompt = f"You are a sentiment analysis assistant. Please provide a sentiment score between -1 (very negative) to 1 (very positive) for the following review summary: '{cleaned}'. Only return the numeric score."
+        
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.0,
+                max_output_tokens=10,
+            )
         )
         score = float(response.text.strip())
         # Convert numeric score to descriptive sentiment
